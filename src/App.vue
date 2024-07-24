@@ -27,23 +27,23 @@ let lon;
 function setVideoBackground(weatherCode) {
   console.log(weatherCode);
   if ([300, 301, 302].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/drizzle.mp4";
+    videoSource.value = "./src/assets/videos/drizzle1.mp4";
   } else if ([500, 501, 502, 511, 520, 521, 522].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/rain.mp4";
+    videoSource.value = "./src/assets/videos/rain1.mp4";
   } else if ([600, 601, 602, 610, 611, 612, 621, 622, 623].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/snow.mp4";
+    videoSource.value = "./src/assets/videos/snow1.mp4";
   } else if ([700, 711, 721, 731, 741, 751].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/fog.mp4";
+    videoSource.value = "./src/assets/videos/fog1.mp4";
   } else if ([800, 801].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/sunny.mp4";
+    videoSource.value = "./src/assets/videos/sunny1.mp4";
   } else if ([802, 803].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/clouds.mp4";
+    videoSource.value = "./src/assets/videos/clouds1.mp4";
   } else if ([804].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/heavy-clouds.mp4";
+    videoSource.value = "./src/assets/videos/heavy-clouds1.mp4";
   } else if ([200, 201, 202, 230, 231, 232, 233].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/thunder.mp4";
+    videoSource.value = "./src/assets/videos/thunder1.mp4";
   } else {
-    videoSource.value = "./src/assets/videos/clouds-undefined.mp4";
+    videoSource.value = "./src/assets/videos/clouds-undefined1.mp4";
   }
 }
 
