@@ -1,7 +1,14 @@
+<script setup>
+import WeatherCard from "./UI/WeatherCard.vue";
+</script>
+
 <template>
-  <div></div>
+  <WeatherCard class="humidity-card"></WeatherCard>
 </template>
 
-<script setup></script>
-
-<style scoped></style>
+<style scoped>
+.humidity-card {
+  width: 100%;
+  height: 100%;
+}
+</style>

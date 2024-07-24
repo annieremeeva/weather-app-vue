@@ -11,12 +11,11 @@ div {
   display: flex;
   background: radial-gradient(
     ellipse farthest-corner at 80% 70%,
-    #7f209b 5%,
-    #5d3b82 70%,
-    #7f2a5b 100%
+    #360e43 5%,
+    #2b1b3c 70%,
+    #39132a 100%
   );
-  border-radius: 15px;
-  box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.597);
-  padding: 20px;
+  border-radius: 5px;
+  padding: 10px;
 }
 </style>

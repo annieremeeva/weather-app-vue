@@ -1,7 +1,12 @@
-<template>
-  <div></div>
-</template>
+<script setup>
+import WeatherCard from "./UI/WeatherCard.vue";
+import WeatherInnerCard from "./UI/WeatherInnerCard.vue";
+</script>
 
-<script setup></script>
+<template>
+  <WeatherCard>
+    <WeatherInnerCard></WeatherInnerCard>
+  </WeatherCard>
+</template>
 
 <style scoped></style>

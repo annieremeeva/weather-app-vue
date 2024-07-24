@@ -6,22 +6,24 @@ import TodayHighlights from "./components/TodayHighlights.vue";
 import WeatherMain from "./components/WeatherMain.vue";
 import { Icon } from "@iconify/vue";
 import { useGeolocation } from "@vueuse/core";
-import { watch, onMounted, ref } from "vue";
+import { watch, onMounted, ref, reactive } from "vue";
 
 const { coords, locatedAt, error, resume, pause } = useGeolocation();
+let weatherData = reactive({});
+
+let loadingError = false;
+let paramCity = undefined;
+const userCoordinates = ref({});
 
 onMounted(() => {
   setGeolocationCoords();
+  fetchWeatherData();
 });
-
-let userCoordinates = ref({});
 
 const setGeolocationCoords = async () => {
   if (coords.value?.latitude !== Infinity) {
     userCoordinates.value.latitude = coords.value.latitude;
     userCoordinates.value.longitude = coords.value.longitude;
-
-    console.log(coords.value.latitude, coords.value.longitude);
   }
 };
 
@@ -100,11 +102,6 @@ const weatherIcons = {
   t05n: "fluent:weather-thunderstorm-20-regular",
 };
 
-let weatherData;
-
-let loadingError = false;
-let city;
-
 async function fetchTimezoneData() {
   const response = await axios.get("http://worldtimeapi.org/api/timezone/Europe/London");
 }
@@ -113,13 +110,14 @@ async function fetchWeatherData() {
     const response = await axios.get("https://api.weatherbit.io/v2.0/current", {
       params: {
         lang: "ru",
-        city,
+        city: paramCity,
         key: apiKey,
         lat: userCoordinates.value.latitude,
         lon: userCoordinates.value.longitude,
       },
     });
-    console.log(response.data);
+    weatherData = response.data.data[0];
+    console.log(response.data.data[0]);
   } catch (e) {
     console.log(e.message);
   }
@@ -127,17 +125,21 @@ async function fetchWeatherData() {
 </script>
 
 <template>
-  <div>
-    <WeatherMain />
-    <div>
-      <Location />
-      <Humidity />
+  <div class="weather-display">
+    <div class="display-group">
+      <WeatherMain
+        :city="weatherData.city_name"
+        :temperature="weatherData.app_temp"
+        :weather-description="weatherData.weather.description"
+        :todayDate="weatherData.ob_time"
+      />
+      <div class="details-display">
+        <Location />
+        <Humidity />
+      </div>
     </div>
+    <TodayHighlights />
   </div>
-  <TodayHighlights />
-  <p>{{ userCoordinates }}</p>
-
-  <Icon :icon="weatherIcons.c01d" />
 </template>
 
 <style>
@@ -148,5 +150,44 @@ async function fetchWeatherData() {
   box-sizing: border-box;
   color: white;
   font-family: Nunito, Arial;
+  font-size: 1rem;
+}
+
+button:hover {
+  cursor: pointer;
+}
+body {
+  padding: 50px;
+}
+
+.weather-display {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.display-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.details-display {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 30px;
+}
+
+@media (orientation: landscape) {
+  .display-group {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .details-display {
+    justify-content: space-between;
+  }
 }
 </style>
