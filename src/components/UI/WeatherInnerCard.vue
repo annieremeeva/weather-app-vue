@@ -9,6 +9,7 @@
 <style scoped>
 div {
   display: flex;
+  flex-direction: column;
   background: radial-gradient(
     ellipse farthest-corner at 80% 70%,
     #360e43 5%,
