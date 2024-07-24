@@ -1,7 +1,7 @@
 <script setup>
 import axios from "axios";
-import Humidity from "./components/Humidity.vue";
-import Location from "./components/Location.vue";
+import HumidityCard from "./components/HumidityCard.vue";
+import LocationCard from "./components/LocationCard.vue";
 import TodayHighlights from "./components/TodayHighlights.vue";
 import WeatherMain from "./components/WeatherMain.vue";
 import { Icon } from "@iconify/vue";
@@ -12,7 +12,10 @@ const { coords, locatedAt, error, resume, pause } = useGeolocation();
 let weatherData = ref({});
 
 let loadingError = false;
-let paramCity = undefined;
+let paramCity = ref(undefined);
+
+let lat;
+let lon;
 const userCoordinates = ref({});
 
 onMounted(() => {
@@ -30,9 +33,30 @@ watch(
   () => coords.value.latitude,
   () => {
     setGeolocationCoords();
+    lat = userCoordinates.value.latitude;
+    lon = userCoordinates.value.longitude;
     fetchWeatherData();
   }
 );
+
+watch(
+  () => paramCity,
+  () => console.log(paramCity)
+);
+const todayDate = watch(
+  () => weatherData,
+  () => {
+    console.log(weatherData.value);
+  },
+  { deep: true }
+);
+function searchCity(searchedCity) {
+  paramCity.value = searchedCity;
+  lat = undefined;
+  lon = undefined;
+  fetchWeatherData();
+  paramCity.value = undefined;
+}
 
 const apiKey = import.meta.env.VITE_API_KEY;
 
@@ -99,23 +123,24 @@ const weatherIcons = {
   t05d: "fluent:weather-thunderstorm-20-regular",
   t05n: "fluent:weather-thunderstorm-20-regular",
 };
-
-async function fetchTimezoneData() {
-  const response = await axios.get("http://worldtimeapi.org/api/timezone/Europe/London");
+if (!userCoordinates.value.latitude) {
+  console.log(userCoordinates.value);
+  paramCity.value = "Moscow";
+  fetchWeatherData();
 }
 async function fetchWeatherData() {
   try {
     const response = await axios.get("https://api.weatherbit.io/v2.0/current", {
       params: {
         lang: "ru",
-        city: paramCity,
+        city: paramCity.value,
         key: apiKey,
-        lat: userCoordinates.value.latitude,
-        lon: userCoordinates.value.longitude,
+        lat,
+        lon,
       },
     });
     weatherData.value = JSON.parse(JSON.stringify(response.data.data[0]));
-    console.log(response.data.data[0]);
+    console.log(weatherData.value);
   } catch (e) {
     console.log(e.message);
   }
@@ -124,19 +149,19 @@ async function fetchWeatherData() {
 
 <template>
   <div class="weather-display">
+    <h1>Fantastic weather</h1>
     <div class="display-group">
       <WeatherMain
         :city="weatherData.city_name"
         :temperature="weatherData.app_temp"
         :weather-description="weatherData.weather?.description"
-        :todayDate="
-          weatherData.ob_time.split(' ').slice(0, 1)[0].split('-').reverse().join('.')
-        "
+        :todayDate="weatherData.ob_time"
+        @search-city="searchCity"
         :weather-icon="weatherIcons[weatherData.weather?.icon]"
       />
       <div class="details-display">
-        <Location />
-        <Humidity />
+        <LocationCard :lat="weatherData.lat" :long="weatherData.lon" />
+        <HumidityCard :humidity="weatherData.rh" />
       </div>
     </div>
     <TodayHighlights />
@@ -179,6 +204,21 @@ body {
   flex-direction: column;
   width: 100%;
   gap: 30px;
+}
+
+h1 {
+  background: linear-gradient(to right, #7f209b 5%, #5d3b82 70%, #7f2a5b 100%);
+  font-size: 2.5rem;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 2px #0000005c;
+}
+
+h2 {
+  font-size: 1.5rem;
 }
 
 @media (orientation: landscape) {

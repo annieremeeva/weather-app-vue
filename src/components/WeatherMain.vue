@@ -28,7 +28,12 @@ const props = defineProps({
 <template>
   <WeatherCard class="weather-main">
     <div class="search-bar">
-      <input v-model="searchedCity" type="text" placeholder="Поиск" />
+      <input
+        v-model="searchedCity"
+        type="text"
+        placeholder="Поиск"
+        @keyup.enter="$emit('search-city', searchedCity)"
+      />
       <button @click="$emit('search-city', searchedCity)">
         <Icon
           icon="fluent:search-20-filled"
@@ -67,7 +72,7 @@ const props = defineProps({
         height="22"
         style="color: white"
       />
-      {{ todayDate }}
+      {{ todayDate.split(" ").slice(0, 1)[0].split("-").reverse().join(".") }}
     </p>
   </WeatherCard>
 </template>

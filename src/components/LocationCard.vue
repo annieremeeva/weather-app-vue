@@ -1,0 +1,33 @@
+<script setup>
+import WeatherCard from "./UI/WeatherCard.vue";
+import { Icon } from "@iconify/vue";
+
+const props = defineProps({
+  lat: {
+    required: true,
+  },
+  long: {
+    required: true,
+  },
+});
+</script>
+
+<template>
+  <WeatherCard class="location-card">
+    <Icon icon="ph:compass-rose" width="64" height="64" style="color: white" />
+    <div>
+      <h2>Широта: {{ lat }}</h2>
+      <h2>Долгота: {{ long }}</h2>
+    </div>
+  </WeatherCard>
+</template>
+
+<style scoped>
+.location-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+</style>
