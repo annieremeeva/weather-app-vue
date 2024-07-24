@@ -19,6 +19,9 @@ const props = defineProps({
   todayDate: {
     required: true,
   },
+  weatherIcon: {
+    required: true,
+  },
 });
 </script>
 
@@ -36,12 +39,7 @@ const props = defineProps({
       </button>
     </div>
 
-    <Icon
-      class="weather-icon"
-      icon="fluent:weather-blowing-snow-20-filled"
-      width="100px"
-      style="color: white"
-    />
+    <Icon class="weather-icon" :icon="weatherIcon" width="100px" style="color: white" />
     <p class="temperature">{{ temperature }} &deg;C</p>
     <p class="weather-description">
       <Icon
@@ -50,7 +48,7 @@ const props = defineProps({
         height="22"
         style="color: white"
       />
-      {{ weather.description }}
+      {{ weatherDescription }}
     </p>
     <hr class="line" />
     <p>
@@ -69,7 +67,7 @@ const props = defineProps({
         height="22"
         style="color: white"
       />
-      Tue
+      {{ todayDate }}
     </p>
   </WeatherCard>
 </template>

@@ -6,10 +6,10 @@ import TodayHighlights from "./components/TodayHighlights.vue";
 import WeatherMain from "./components/WeatherMain.vue";
 import { Icon } from "@iconify/vue";
 import { useGeolocation } from "@vueuse/core";
-import { watch, onMounted, ref, reactive } from "vue";
+import { watch, onMounted, ref, reactive, getCurrentInstance } from "vue";
 
 const { coords, locatedAt, error, resume, pause } = useGeolocation();
-let weatherData = reactive({});
+let weatherData = ref({});
 
 let loadingError = false;
 let paramCity = undefined;
@@ -17,7 +17,6 @@ const userCoordinates = ref({});
 
 onMounted(() => {
   setGeolocationCoords();
-  fetchWeatherData();
 });
 
 const setGeolocationCoords = async () => {
@@ -31,7 +30,6 @@ watch(
   () => coords.value.latitude,
   () => {
     setGeolocationCoords();
-    fetchTimezoneData();
     fetchWeatherData();
   }
 );
@@ -116,7 +114,7 @@ async function fetchWeatherData() {
         lon: userCoordinates.value.longitude,
       },
     });
-    weatherData = response.data.data[0];
+    weatherData.value = JSON.parse(JSON.stringify(response.data.data[0]));
     console.log(response.data.data[0]);
   } catch (e) {
     console.log(e.message);
@@ -130,8 +128,11 @@ async function fetchWeatherData() {
       <WeatherMain
         :city="weatherData.city_name"
         :temperature="weatherData.app_temp"
-        :weather-description="weatherData.weather.description"
-        :todayDate="weatherData.ob_time"
+        :weather-description="weatherData.weather?.description"
+        :todayDate="
+          weatherData.ob_time.split(' ').slice(0, 1)[0].split('-').reverse().join('.')
+        "
+        :weather-icon="weatherIcons[weatherData.weather?.icon]"
       />
       <div class="details-display">
         <Location />
