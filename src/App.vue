@@ -6,57 +6,7 @@ import TodayHighlights from "./components/TodayHighlights.vue";
 import WeatherMain from "./components/WeatherMain.vue";
 import { Icon } from "@iconify/vue";
 import { useGeolocation } from "@vueuse/core";
-import { watch, onMounted, ref, reactive, getCurrentInstance } from "vue";
-
-const { coords, locatedAt, error, resume, pause } = useGeolocation();
-let weatherData = ref({});
-
-let loadingError = false;
-let paramCity = ref(undefined);
-
-let lat;
-let lon;
-const userCoordinates = ref({});
-
-onMounted(() => {
-  setGeolocationCoords();
-});
-
-const setGeolocationCoords = async () => {
-  if (coords.value?.latitude !== Infinity) {
-    userCoordinates.value.latitude = coords.value.latitude;
-    userCoordinates.value.longitude = coords.value.longitude;
-  }
-};
-
-watch(
-  () => coords.value.latitude,
-  () => {
-    setGeolocationCoords();
-    lat = userCoordinates.value.latitude;
-    lon = userCoordinates.value.longitude;
-    fetchWeatherData();
-  }
-);
-
-watch(
-  () => paramCity,
-  () => console.log(paramCity)
-);
-const todayDate = watch(
-  () => weatherData,
-  () => {
-    console.log(weatherData.value);
-  },
-  { deep: true }
-);
-function searchCity(searchedCity) {
-  paramCity.value = searchedCity;
-  lat = undefined;
-  lon = undefined;
-  fetchWeatherData();
-  paramCity.value = undefined;
-}
+import { watch, onMounted, ref, computed } from "vue";
 
 const apiKey = import.meta.env.VITE_API_KEY;
 
@@ -123,8 +73,86 @@ const weatherIcons = {
   t05d: "fluent:weather-thunderstorm-20-regular",
   t05n: "fluent:weather-thunderstorm-20-regular",
 };
+
+const { coords, locatedAt, error, resume, pause } = useGeolocation();
+let weatherData = ref({});
+
+let loadingError = false;
+let paramCity = ref(undefined);
+
+let videoSource = ref("");
+
+let lat;
+let lon;
+
+function setVideoBackground(weatherCode) {
+  console.log(weatherCode);
+  if ([300, 301, 302].includes(weatherCode)) {
+    videoSource.value = "./src/assets/videos/drizzle.mp4";
+  } else if ([500, 501, 502, 511, 520, 521, 522].includes(weatherCode)) {
+    videoSource.value = "./src/assets/videos/rain.mp4";
+  } else if ([600, 601, 602, 610, 611, 612, 621, 622, 623].includes(weatherCode)) {
+    videoSource.value = "./src/assets/videos/snow.mp4";
+  } else if ([700, 711, 721, 731, 741, 751].includes(weatherCode)) {
+    videoSource.value = "./src/assets/videos/fog.mp4";
+  } else if ([800, 801].includes(weatherCode)) {
+    videoSource.value = "./src/assets/videos/sunny.mp4";
+  } else if ([802, 803].includes(weatherCode)) {
+    videoSource.value = "./src/assets/videos/clouds.mp4";
+  } else if ([804].includes(weatherCode)) {
+    videoSource.value = "./src/assets/videos/heavy-clouds.mp4";
+  } else if ([200, 201, 202, 230, 231, 232, 233].includes(weatherCode)) {
+    videoSource.value = "./src/assets/videos/thunder.mp4";
+  } else {
+    videoSource.value = "./src/assets/videos/clouds-undefined.mp4";
+  }
+}
+
+const userCoordinates = ref({});
+
+onMounted(() => {
+  setGeolocationCoords();
+});
+
+const setGeolocationCoords = async () => {
+  if (coords.value?.latitude !== Infinity) {
+    userCoordinates.value.latitude = coords.value.latitude;
+    userCoordinates.value.longitude = coords.value.longitude;
+  }
+};
+
+watch(
+  () => coords.value.latitude,
+  () => {
+    setGeolocationCoords();
+    lat = userCoordinates.value.latitude;
+    lon = userCoordinates.value.longitude;
+    fetchWeatherData();
+  }
+);
+
+watch(
+  () => paramCity,
+  () => console.log(paramCity)
+);
+
+watch(
+  () => weatherData.value.weather,
+  () => setVideoBackground(weatherData.value.weather?.code),
+  {
+    deep: true,
+  }
+);
+
+function searchCity(searchedCity) {
+  paramCity.value = searchedCity;
+  lat = undefined;
+  lon = undefined;
+  fetchWeatherData();
+  paramCity.value = undefined;
+}
+
 if (!userCoordinates.value.latitude) {
-  console.log(userCoordinates.value);
   paramCity.value = "Moscow";
   fetchWeatherData();
   paramCity.value = undefined;
@@ -141,15 +169,23 @@ async function fetchWeatherData() {
       },
     });
     weatherData.value = JSON.parse(JSON.stringify(response.data.data[0]));
-    console.log(weatherData.value);
   } catch (e) {
     console.log(e.message);
   }
 }
+
+//let weatherCodePassed = ref(401);
+
+//if (weatherData.value.weather?.code) {
+//  weatherCodePassed.value = weatherData.value.weather.code;
+//}
+
+setVideoBackground(601);
 </script>
 
 <template>
   <div class="weather-display">
+    <video class="background-video" autoplay loop muted :src="videoSource"></video>
     <h1>Fantastic weather</h1>
     <div class="display-group">
       <WeatherMain
@@ -219,7 +255,17 @@ h1 {
 }
 
 h2 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+}
+
+.background-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
 }
 
 @media (orientation: landscape) {

@@ -16,8 +16,14 @@ const props = defineProps({
   <WeatherCard class="location-card">
     <Icon icon="ph:compass-rose" width="64" height="64" style="color: white" />
     <div>
-      <h2>Широта: {{ lat }}</h2>
-      <h2>Долгота: {{ long }}</h2>
+      <div class="coords">
+        <h2>Широта:</h2>
+        <h2>{{ lat }}</h2>
+      </div>
+      <div class="coords">
+        <h2>Долгота:</h2>
+        <h2>{{ long }}</h2>
+      </div>
     </div>
   </WeatherCard>
 </template>
@@ -29,5 +35,17 @@ const props = defineProps({
   display: flex;
   align-items: center;
   gap: 30px;
+}
+
+.coords {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (orientation: landscape) {
+  .coords {
+    flex-direction: row;
+    gap: 10px;
+  }
 }
 </style>
