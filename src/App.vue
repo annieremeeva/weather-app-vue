@@ -127,6 +127,7 @@ if (!userCoordinates.value.latitude) {
   console.log(userCoordinates.value);
   paramCity.value = "Moscow";
   fetchWeatherData();
+  paramCity.value = undefined;
 }
 async function fetchWeatherData() {
   try {
