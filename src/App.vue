@@ -28,25 +28,27 @@ const videoSource = ref("");
 let lat;
 let lon;
 
-function setVideoBackground(weatherCode) {
+const imageSource = ref("");
+
+function setBackground(weatherCode) {
   if ([300, 301, 302].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/drizzle1.mp4";
+    imageSource.value = "./src/assets/images/drizzle.jpg";
   } else if ([500, 501, 502, 511, 520, 521, 522].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/rain1.mp4";
+    imageSource.value = "./src/assets/images/rain.jpg";
   } else if ([600, 601, 602, 610, 611, 612, 621, 622, 623].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/snow1.mp4";
+    imageSource.value = "./src/assets/images/snow.jpg";
   } else if ([700, 711, 721, 731, 741, 751].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/fog1.mp4";
+    imageSource.value = "./src/assets/images/fog.jpg";
   } else if ([800, 801].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/sunny1.mp4";
+    imageSource.value = "./src/assets/images/sunny.jpg";
   } else if ([802, 803].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/clouds1.mp4";
+    imageSource.value = "./src/assets/images/clouds.jpg";
   } else if ([804].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/heavy-clouds1.mp4";
+    imageSource.value = "./src/assets/images/heavy-clouds.jpg";
   } else if ([200, 201, 202, 230, 231, 232, 233].includes(weatherCode)) {
-    videoSource.value = "./src/assets/videos/thunder1.mp4";
+    imageSource.value = "./src/assets/images/thunder.jpg";
   } else {
-    videoSource.value = "./src/assets/videos/clouds-undefined1.mp4";
+    imageSource.value = "./src/assets/images/clouds-undefined.jpg";
   }
 }
 
@@ -145,7 +147,7 @@ async function setData() {
   try {
     weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
     sunTime.value = await returnSunTime(weatherData.value.timezone);
-    setVideoBackground(weatherData.value.weather.code);
+    setBackground(weatherData.value.weather.code);
   } catch (e) {
     isError.value = true;
     console.log(e.message);
@@ -168,7 +170,7 @@ async function firstSetup() {
     setGeolocationCoords();
     weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
     sunTime.value = await returnSunTime(weatherData.value.timezone);
-    setVideoBackground(weatherData.value.weather.code);
+    setBackground(weatherData.value.weather.code);
   } catch (e) {
     isError = true;
     return e.message;
@@ -187,7 +189,7 @@ firstSetup();
   </div>
 
   <div class="weather-display" v-else-if="!isLoading">
-    <video class="background-video" autoplay loop muted :src="videoSource"></video>
+    <img :src="imageSource" class="background" />
     <h1>Fantastic weather</h1>
     <div class="display-group">
       <WeatherMain
@@ -272,7 +274,8 @@ h2 {
   font-size: 1.25rem;
 }
 
-.background-video {
+.background-video,
+.background {
   position: fixed;
   top: 0;
   left: 0;
