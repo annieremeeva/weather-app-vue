@@ -60,9 +60,11 @@ function setGeolocationCoords() {
   } else {
     paramCity.value = "Moscow";
   }
+  console.log(1);
 }
 
 async function fetchWeatherData(city, lat, lon) {
+  console.log(2);
   try {
     const response = await axios.get("https://api.weatherbit.io/v2.0/current", {
       params: {
@@ -92,6 +94,7 @@ const todayDate = new Date()
 const timeData = ref({});
 
 async function fetchTimeData(time, timeZone) {
+  console.log(3);
   try {
     let url = `https://api.ipgeolocation.io/timezone/convert`;
 
@@ -117,6 +120,7 @@ function transformSunTime(sunTime, obTime) {
 }
 
 async function returnSunTime(timeZone) {
+  console.log(4);
   const sunriseTime = transformSunTime(
     weatherData.value.sunrise,
     weatherData.value.ob_time
@@ -137,12 +141,16 @@ async function returnSunTime(timeZone) {
 }
 watch(
   () => coords.value.latitude,
-  () => firstSetup()
+  () => {
+    console.log(7);
+    firstSetup();
+  }
 );
 
 let sunTime = ref();
 
 async function setData() {
+  console.log(5);
   isLoading.value = true;
   try {
     weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
@@ -165,6 +173,7 @@ async function searchCity(searchedCity) {
 }
 
 async function firstSetup() {
+  console.log(6);
   isLoading.value = true;
   try {
     setGeolocationCoords();
@@ -182,6 +191,8 @@ firstSetup();
 </script>
 
 <template>
+  <img src="./assets/images/altBackground.svg" class="background" />
+
   <div class="error-display" v-if="isError">
     <WeatherCard>
       <p>Что-то пошло не так</p>
@@ -189,7 +200,6 @@ firstSetup();
   </div>
 
   <div class="weather-display" v-else-if="!isLoading">
-    <img :src="imageSource" class="background" />
     <h1>Fantastic weather</h1>
     <div class="display-group">
       <WeatherMain
@@ -237,6 +247,7 @@ button:hover {
 }
 body {
   padding: 50px;
+  background-color: #b69cff;
 }
 
 .weather-display {
