@@ -4,19 +4,17 @@ import HumidityCard from "./components/HumidityCard.vue";
 import LocationCard from "./components/LocationCard.vue";
 import TodayHighlights from "./components/TodayHighlights.vue";
 import WeatherMain from "./components/WeatherMain.vue";
-import { Icon } from "@iconify/vue";
 import { useGeolocation } from "@vueuse/core";
 import { watch, onMounted, ref, computed } from "vue";
 import { weatherIcons } from "./icons";
 
 const apiKey = import.meta.env.VITE_API_KEY;
+const timeAPIKey = import.meta.env.VITE_API_KEY_TZ;
 
-weatherIcons.a01n = weatherIcons.a01d;
+const { coords } = useGeolocation();
 
-const { coords, locatedAt, error, resume, pause } = useGeolocation();
 let weatherData = ref({});
 
-let loadingError = false;
 let paramCity = ref(undefined);
 
 let videoSource = ref("");
@@ -25,7 +23,6 @@ let lat;
 let lon;
 
 function setVideoBackground(weatherCode) {
-  console.log(weatherCode);
   if ([300, 301, 302].includes(weatherCode)) {
     videoSource.value = "./src/assets/videos/drizzle1.mp4";
   } else if ([500, 501, 502, 511, 520, 521, 522].includes(weatherCode)) {
@@ -53,27 +50,86 @@ onMounted(() => {
   setGeolocationCoords();
 });
 
-const setGeolocationCoords = async () => {
+function setGeolocationCoords() {
   if (coords.value?.latitude !== Infinity) {
-    userCoordinates.value.latitude = coords.value.latitude;
-    userCoordinates.value.longitude = coords.value.longitude;
+    lat = coords.value.latitude;
+    lon = coords.value.longitude;
+    paramCity.value = undefined;
+  } else {
+    paramCity.value = "Moscow";
   }
-};
+}
 
-watch(
-  () => coords.value.latitude,
-  () => {
-    setGeolocationCoords();
-    lat = userCoordinates.value.latitude;
-    lon = userCoordinates.value.longitude;
-    fetchWeatherData();
+async function fetchWeatherData(city, lat, lon) {
+  try {
+    const response = await axios.get("https://api.weatherbit.io/v2.0/current", {
+      params: {
+        lang: "ru",
+        city,
+        key: apiKey,
+        lat,
+        lon,
+      },
+    });
+    console.log(response.data.data[0]);
+    return response.data.data[0];
+  } catch (e) {
+    return 0;
   }
-);
+}
 
-watch(
-  () => paramCity,
-  () => console.log(paramCity)
-);
+const todayDate = new Date()
+  .toISOString()
+  .split("T")
+  .slice(0, 1)
+  .toString()
+  .split("-")
+  .reverse()
+  .join(".");
+
+const timeData = ref({});
+
+async function fetchTimeData(time, timeZone) {
+  let url = `https://api.ipgeolocation.io/timezone/convert`;
+
+  const response = await axios.get(url, {
+    params: {
+      tz_from: "UTC",
+      tz_to: timeZone,
+      time,
+      apiKey: timeAPIKey,
+    },
+  });
+  timeData.value = response;
+  console.log(timeData.value);
+  return response.data;
+}
+
+function transformSunTime(sunTime, obTime) {
+  return obTime.split(" ").slice(0, 1).toString() + " " + sunTime;
+}
+
+async function returnSunTime(timeZone) {
+  const sunriseTime = transformSunTime(
+    weatherData.value.sunrise,
+    weatherData.value.ob_time
+  );
+  let sunriseTimeConv = await fetchTimeData(sunriseTime, timeZone);
+  sunriseTimeConv = sunriseTimeConv.converted_time;
+
+  const sunsetTime = transformSunTime(
+    weatherData.value.sunset,
+    weatherData.value.ob_time
+  );
+
+  let sunsetTimeConv = await fetchTimeData(sunsetTime, timeZone);
+
+  sunsetTimeConv = sunsetTimeConv.converted_time;
+
+  return { sunriseTimeConv, sunsetTimeConv };
+}
+
+//returnSunTime();
 
 watch(
   () => weatherData.value.weather,
@@ -83,44 +139,25 @@ watch(
   }
 );
 
-function searchCity(searchedCity) {
+watch(
+  () => coords.value.latitude,
+  () => firstSetup()
+);
+
+let sunTime = ref();
+
+async function searchCity(searchedCity) {
+  weatherData.value = await fetchWeatherData(searchedCity, undefined, undefined);
   paramCity.value = searchedCity;
-  lat = undefined;
-  lon = undefined;
-  fetchWeatherData();
-  paramCity.value = undefined;
+  sunTime.value = await fetchTimeData(weatherData.value.timezone);
 }
 
-if (!userCoordinates.value.latitude) {
-  paramCity.value = "Moscow";
-  fetchWeatherData();
-  paramCity.value = undefined;
+async function firstSetup() {
+  setGeolocationCoords();
+  weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
+  sunTime.value = await returnSunTime(weatherData.value.timezone);
 }
-async function fetchWeatherData() {
-  try {
-    const response = await axios.get("https://api.weatherbit.io/v2.0/current", {
-      params: {
-        lang: "ru",
-        city: paramCity.value,
-        key: apiKey,
-        lat,
-        lon,
-      },
-    });
-    weatherData.value = JSON.parse(JSON.stringify(response.data.data[0]));
-    console.log(weatherData.value);
-  } catch (e) {
-    console.log(e.message);
-  }
-}
-
-//let weatherCodePassed = ref(401);
-
-//if (weatherData.value.weather?.code) {
-//  weatherCodePassed.value = weatherData.value.weather.code;
-//}
-
-setVideoBackground(601);
+firstSetup();
 </script>
 
 <template>
@@ -132,7 +169,7 @@ setVideoBackground(601);
         :city="weatherData.city_name"
         :temperature="weatherData.app_temp"
         :weather-description="weatherData.weather?.description"
-        :todayDate="weatherData.ob_time"
+        :todayDate="todayDate"
         @search-city="searchCity"
         :weather-icon="weatherIcons[weatherData.weather?.icon]"
       />
@@ -141,7 +178,16 @@ setVideoBackground(601);
         <HumidityCard :humidity="weatherData.rh" />
       </div>
     </div>
-    <TodayHighlights />
+    <TodayHighlights
+      :sunrise="sunTime.sunriseTimeConv"
+      :sunset="sunTime.sunsetTimeConv"
+      :app-temp="weatherData.app_temp"
+      :wind-speed="weatherData.wind_spd"
+      :wind-dir="weatherData.wind_cdir"
+      :pressure="weatherData.pres"
+      :uv="weatherData.uv"
+      :wind-gust="weatherData.gust"
+    />
   </div>
 </template>
 

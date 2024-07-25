@@ -72,7 +72,7 @@ const props = defineProps({
         height="22"
         style="color: white"
       />
-      {{ todayDate.split(" ").slice(0, 1)[0].split("-").reverse().join(".") }}
+      {{ todayDate }}
     </p>
   </WeatherCard>
 </template>

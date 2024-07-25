@@ -84,13 +84,23 @@ const props = defineProps({
     <div class="highlights-column">
       <WeatherInnerCard class="highlights-card">
         <h2>Рассвет и закат</h2>
-        <Icon
-          class="icon"
-          icon="uil:sunset"
-          width="64"
-          height="64"
-          style="color: white"
-        />
+        <div class="sunrise-sunset">
+          <Icon
+            class="icon"
+            icon="hugeicons:sunrise"
+            width="64"
+            height="64"
+            style="color: white"
+          />
+          <Icon
+            class="icon"
+            icon="hugeicons:sunset"
+            width="64"
+            height="64"
+            style="color: white"
+          />
+        </div>
+
         <p>{{}}</p>
       </WeatherInnerCard>
       <WeatherInnerCard class="highlights-card-small">
@@ -125,14 +135,17 @@ const props = defineProps({
 
 .highlights-card {
   height: 300px;
-  gap: 30px;
+  gap: 50px;
 }
 
 .highlights-card-small {
   height: 200px;
   gap: 20px;
 }
-
+.sunrise-sunset {
+  display: flex;
+  justify-content: space-evenly;
+}
 .icon {
   align-self: center;
 }
