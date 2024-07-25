@@ -37,7 +37,7 @@ async function setGeolocationCoords() {
   console.log(1);
 }
 
-const imageSource = ref("");
+const imageSource = ref("./src/assets/images/drizzle.jpg");
 
 function setBackground(weatherCode) {
   if ([300, 301, 302].includes(weatherCode)) {
