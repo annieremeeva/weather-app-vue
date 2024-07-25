@@ -17,6 +17,8 @@ let weatherData = ref({});
 
 let paramCity = ref(undefined);
 
+let isLoading = ref(false);
+
 let videoSource = ref("");
 
 let lat;
@@ -46,10 +48,6 @@ function setVideoBackground(weatherCode) {
 
 const userCoordinates = ref({});
 
-onMounted(() => {
-  setGeolocationCoords();
-});
-
 function setGeolocationCoords() {
   if (coords.value?.latitude !== Infinity) {
     lat = coords.value.latitude;
@@ -71,7 +69,6 @@ async function fetchWeatherData(city, lat, lon) {
         lon,
       },
     });
-    console.log(response.data.data[0]);
     return response.data.data[0];
   } catch (e) {
     return 0;
@@ -101,7 +98,6 @@ async function fetchTimeData(time, timeZone) {
     },
   });
   timeData.value = response;
-  console.log(timeData.value);
   return response.data;
 }
 
@@ -128,17 +124,6 @@ async function returnSunTime(timeZone) {
 
   return { sunriseTimeConv, sunsetTimeConv };
 }
-
-//returnSunTime();
-
-watch(
-  () => weatherData.value.weather,
-  () => setVideoBackground(weatherData.value.weather?.code),
-  {
-    deep: true,
-  }
-);
-
 watch(
   () => coords.value.latitude,
   () => firstSetup()
@@ -146,22 +131,34 @@ watch(
 
 let sunTime = ref();
 
+async function setData() {
+  isLoading.value = true;
+  weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
+  sunTime.value = await returnSunTime(weatherData.value.timezone);
+  setVideoBackground(weatherData.value.weather.code);
+  isLoading.value = false;
+}
+
 async function searchCity(searchedCity) {
-  weatherData.value = await fetchWeatherData(searchedCity, undefined, undefined);
   paramCity.value = searchedCity;
-  sunTime.value = await fetchTimeData(weatherData.value.timezone);
+  weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
+  sunTime.value = await returnSunTime(weatherData.value.timezone);
+  setData();
 }
 
 async function firstSetup() {
+  isLoading.value = true;
   setGeolocationCoords();
   weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
   sunTime.value = await returnSunTime(weatherData.value.timezone);
+  setVideoBackground(weatherData.value.weather.code);
+  isLoading.value = false;
 }
 firstSetup();
 </script>
 
 <template>
-  <div class="weather-display">
+  <div class="weather-display" v-if="!isLoading">
     <video class="background-video" autoplay loop muted :src="videoSource"></video>
     <h1>Fantastic weather</h1>
     <div class="display-group">
