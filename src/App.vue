@@ -23,15 +23,14 @@ const isError = ref(false);
 
 const videoSource = ref("");
 
-let lat;
-let lon;
+const lat = ref();
+const lon = ref();
 
 async function setGeolocationCoords() {
   const { coords } = await useGeolocation();
   if (coords.value?.latitude !== Infinity) {
-    lat = coords.value.latitude;
-    lon = coords.value.longitude;
     paramCity.value = undefined;
+    return coords;
   } else {
     paramCity.value = "Moscow";
   }
@@ -168,7 +167,9 @@ async function firstSetup() {
   console.log(6);
   isLoading.value = true;
   try {
-    setGeolocationCoords();
+    const coords = setGeolocationCoords();
+    lat.value = coords.latitude;
+    lon.value = coords.longitude;
     weatherCurrentData.value = await fetchWeatherCurrentData(paramCity.value, lat, lon);
     sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
     setBackground(weatherCurrentData.value.weather.code);
@@ -188,13 +189,11 @@ firstSetup();
 </script>
 
 <template>
-  <img :src="imageSource" @error="setAltImg" class="background" />
+  <img :src="imageSource" class="background" />
 
-  <div class="error-display" v-if="isError">
-    <WeatherCard>
-      <p>Что-то пошло не так</p>
-    </WeatherCard>
-  </div>
+  <WeatherCard class="error-display" v-if="isError">
+    <p>Что-то пошло не так</p>
+  </WeatherCard>
 
   <div class="weather-display" v-else-if="!isLoading">
     <div class="display-group">
@@ -267,7 +266,8 @@ body {
 }
 
 .error-display {
-  display: flex;
+  justify-content: center;
+  align-self: center;
 }
 
 h1 {
