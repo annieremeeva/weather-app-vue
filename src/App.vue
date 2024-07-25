@@ -13,9 +13,7 @@ import WeatherCard from "./components/UI/WeatherCard.vue";
 const apiKey = import.meta.env.VITE_API_KEY;
 const timeAPIKey = import.meta.env.VITE_API_KEY_TZ;
 
-const { coords } = useGeolocation();
-
-const weatherData = ref({});
+const weatherCurrentData = ref({});
 
 const paramCity = ref(undefined);
 
@@ -27,6 +25,18 @@ const videoSource = ref("");
 
 let lat;
 let lon;
+
+async function setGeolocationCoords() {
+  const { coords } = await useGeolocation();
+  if (coords.value?.latitude !== Infinity) {
+    lat = coords.value.latitude;
+    lon = coords.value.longitude;
+    paramCity.value = undefined;
+  } else {
+    paramCity.value = "Moscow";
+  }
+  console.log(1);
+}
 
 const imageSource = ref("");
 
@@ -52,18 +62,7 @@ function setBackground(weatherCode) {
   }
 }
 
-function setGeolocationCoords() {
-  if (coords.value?.latitude !== Infinity) {
-    lat = coords.value.latitude;
-    lon = coords.value.longitude;
-    paramCity.value = undefined;
-  } else {
-    paramCity.value = "Moscow";
-  }
-  console.log(1);
-}
-
-async function fetchWeatherData(city, lat, lon) {
+async function fetchWeatherCurrentData(city, lat, lon) {
   console.log(2);
   try {
     const response = await axios.get("https://api.weatherbit.io/v2.0/current", {
@@ -122,15 +121,15 @@ function transformSunTime(sunTime, obTime) {
 async function returnSunTime(timeZone) {
   console.log(4);
   const sunriseTime = transformSunTime(
-    weatherData.value.sunrise,
-    weatherData.value.ob_time
+    weatherCurrentData.value.sunrise,
+    weatherCurrentData.value.ob_time
   );
   let sunriseTimeConv = await fetchTimeData(sunriseTime, timeZone);
   sunriseTimeConv = sunriseTimeConv.converted_time;
 
   const sunsetTime = transformSunTime(
-    weatherData.value.sunset,
-    weatherData.value.ob_time
+    weatherCurrentData.value.sunset,
+    weatherCurrentData.value.ob_time
   );
 
   let sunsetTimeConv = await fetchTimeData(sunsetTime, timeZone);
@@ -139,13 +138,6 @@ async function returnSunTime(timeZone) {
 
   return { sunriseTimeConv, sunsetTimeConv };
 }
-watch(
-  () => coords.value.latitude,
-  () => {
-    console.log(7);
-    firstSetup();
-  }
-);
 
 let sunTime = ref();
 
@@ -153,9 +145,9 @@ async function setData() {
   console.log(5);
   isLoading.value = true;
   try {
-    weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
-    sunTime.value = await returnSunTime(weatherData.value.timezone);
-    setBackground(weatherData.value.weather.code);
+    weatherCurrentData.value = await fetchWeatherCurrentData(paramCity.value, lat, lon);
+    sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
+    setBackground(weatherCurrentData.value.weather.code);
   } catch (e) {
     isError.value = true;
     console.log(e.message);
@@ -167,8 +159,8 @@ async function setData() {
 
 async function searchCity(searchedCity) {
   paramCity.value = searchedCity;
-  weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
-  sunTime.value = await returnSunTime(weatherData.value.timezone);
+  weatherCurrentData.value = await fetchWeatherCurrentData(paramCity.value, lat, lon);
+  sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
   setData();
 }
 
@@ -177,21 +169,26 @@ async function firstSetup() {
   isLoading.value = true;
   try {
     setGeolocationCoords();
-    weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
-    sunTime.value = await returnSunTime(weatherData.value.timezone);
-    setBackground(weatherData.value.weather.code);
+    weatherCurrentData.value = await fetchWeatherCurrentData(paramCity.value, lat, lon);
+    sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
+    setBackground(weatherCurrentData.value.weather.code);
   } catch (e) {
-    isError = true;
+    isError.value = true;
     return e.message;
   } finally {
     isLoading.value = false;
   }
 }
+
+function setAltImg(event) {
+  event.target.src = "./src/assets/images/altBackground.svg";
+}
+
 firstSetup();
 </script>
 
 <template>
-  <img src="./assets/images/altBackground.svg" class="background" />
+  <img :src="imageSource" @error="setAltImg" class="background" />
 
   <div class="error-display" v-if="isError">
     <WeatherCard>
@@ -200,34 +197,33 @@ firstSetup();
   </div>
 
   <div class="weather-display" v-else-if="!isLoading">
-    <h1>Fantastic weather</h1>
     <div class="display-group">
       <WeatherMain
-        :city="weatherData.city_name"
-        :temperature="weatherData.app_temp"
-        :weather-description="weatherData.weather?.description"
+        :city="weatherCurrentData.city_name"
+        :temperature="weatherCurrentData.app_temp"
+        :weather-description="weatherCurrentData.weather?.description"
         :todayDate="todayDate"
         @search-city="searchCity"
-        :weather-icon="weatherIcons[weatherData.weather?.icon]"
+        :weather-icon="weatherIcons[weatherCurrentData.weather?.icon]"
       />
       <div class="details-display">
-        <LocationCard :lat="weatherData.lat" :long="weatherData.lon" />
-        <HumidityCard :humidity="weatherData.rh" />
+        <LocationCard :lat="weatherCurrentData.lat" :long="weatherCurrentData.lon" />
+        <HumidityCard :humidity="weatherCurrentData.rh" />
       </div>
     </div>
     <TodayHighlights
       :sunrise="sunTime.sunriseTimeConv"
       :sunset="sunTime.sunsetTimeConv"
-      :app-temp="weatherData.app_temp"
-      :wind-speed="weatherData.wind_spd"
-      :wind-dir="weatherData.wind_cdir"
-      :pressure="weatherData.pres"
-      :uv="weatherData.uv"
-      :wind-gust="weatherData.gust"
+      :app-temp="weatherCurrentData.app_temp"
+      :wind-speed="weatherCurrentData.wind_spd"
+      :wind-dir="weatherCurrentData.wind_cdir"
+      :pressure="weatherCurrentData.pres"
+      :uv="weatherCurrentData.uv"
+      :wind-gust="weatherCurrentData.gust"
     />
   </div>
   <div class="loading-display" v-else>
-    <Icon icon="ep:loading" width="192" height="192" style="color: #6e2fac" />
+    <Icon icon="ep:loading" width="192" height="192" style="color: #2b4260" />
   </div>
 </template>
 
@@ -268,6 +264,10 @@ body {
   flex-direction: column;
   width: 100%;
   gap: 30px;
+}
+
+.error-display {
+  display: flex;
 }
 
 h1 {

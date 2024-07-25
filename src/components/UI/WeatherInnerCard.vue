@@ -10,12 +10,7 @@
 div {
   display: flex;
   flex-direction: column;
-  background: radial-gradient(
-    ellipse farthest-corner at 80% 70%,
-    #360e43 5%,
-    #2b1b3c 70%,
-    #39132a 100%
-  );
+  background: #4d6170;
   border-radius: 5px;
   padding: 10px;
 }
