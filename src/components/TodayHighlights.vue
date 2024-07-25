@@ -29,6 +29,10 @@ const props = defineProps({
     type: String,
   },
 });
+
+const sunriseFormated = props.sunrise.split(" ").pop().split(":").slice(0, 2).join(":");
+
+const sunsetFormated = props.sunset.split(" ").pop().split(":").slice(0, 2).join(":");
 </script>
 
 <template>
@@ -43,7 +47,10 @@ const props = defineProps({
           height="64"
           style="color: white"
         />
-        <p>{{}}</p>
+        <div class="wind-data">
+          <p>{{ windSpeed }} м/с</p>
+          <p>{{ windDir }}</p>
+        </div>
       </WeatherInnerCard>
       <WeatherInnerCard class="highlights-card-small">
         <h2>Порывы ветра</h2>
@@ -54,7 +61,7 @@ const props = defineProps({
           height="64"
           style="color: white"
         />
-        <p>{{}}</p>
+        <p>{{ windGust }} м/с</p>
       </WeatherInnerCard>
     </div>
     <div class="highlights-column">
@@ -67,7 +74,7 @@ const props = defineProps({
           height="64"
           style="color: white"
         />
-        <p>{{}}</p>
+        <p>{{ Math.round(pressure * 0.75006156) }} мм рт. ст.</p>
       </WeatherInnerCard>
       <WeatherInnerCard class="highlights-card-small">
         <h2>Ощущается</h2>
@@ -78,7 +85,7 @@ const props = defineProps({
           height="64"
           style="color: white"
         />
-        <p>{{}}</p>
+        <p>{{ appTemp }} &deg;C</p>
       </WeatherInnerCard>
     </div>
     <div class="highlights-column">
@@ -100,8 +107,10 @@ const props = defineProps({
             style="color: white"
           />
         </div>
-
-        <p>{{}}</p>
+        <div class="sun-data">
+          <p>{{ sunriseFormated }}</p>
+          <p>{{ sunsetFormated }}</p>
+        </div>
       </WeatherInnerCard>
       <WeatherInnerCard class="highlights-card-small">
         <h2>UV-индекс</h2>
@@ -112,13 +121,19 @@ const props = defineProps({
           height="64"
           style="color: white"
         />
-        <p>{{}}</p>
+        <p>{{ uv }}</p>
       </WeatherInnerCard>
     </div>
   </WeatherCard>
 </template>
 
 <style scoped>
+.wind-data,
+.sun-data {
+  display: flex;
+  justify-content: space-evenly;
+}
+
 .highlights {
   display: flex;
   flex-direction: column;
@@ -148,6 +163,12 @@ const props = defineProps({
 }
 .icon {
   align-self: center;
+}
+
+p {
+  align-self: center;
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 
 @media (orientation: landscape) {

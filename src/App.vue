@@ -6,20 +6,24 @@ import TodayHighlights from "./components/TodayHighlights.vue";
 import WeatherMain from "./components/WeatherMain.vue";
 import { useGeolocation } from "@vueuse/core";
 import { watch, onMounted, ref, computed } from "vue";
+import { Icon } from "@iconify/vue";
 import { weatherIcons } from "./icons";
+import WeatherCard from "./components/UI/WeatherCard.vue";
 
 const apiKey = import.meta.env.VITE_API_KEY;
 const timeAPIKey = import.meta.env.VITE_API_KEY_TZ;
 
 const { coords } = useGeolocation();
 
-let weatherData = ref({});
+const weatherData = ref({});
 
-let paramCity = ref(undefined);
+const paramCity = ref(undefined);
 
-let isLoading = ref(false);
+const isLoading = ref(false);
 
-let videoSource = ref("");
+const isError = ref(false);
+
+const videoSource = ref("");
 
 let lat;
 let lon;
@@ -46,8 +50,6 @@ function setVideoBackground(weatherCode) {
   }
 }
 
-const userCoordinates = ref({});
-
 function setGeolocationCoords() {
   if (coords.value?.latitude !== Infinity) {
     lat = coords.value.latitude;
@@ -71,7 +73,8 @@ async function fetchWeatherData(city, lat, lon) {
     });
     return response.data.data[0];
   } catch (e) {
-    return 0;
+    isError.value = true;
+    return e.message;
   }
 }
 
@@ -87,18 +90,24 @@ const todayDate = new Date()
 const timeData = ref({});
 
 async function fetchTimeData(time, timeZone) {
-  let url = `https://api.ipgeolocation.io/timezone/convert`;
+  try {
+    let url = `https://api.ipgeolocation.io/timezone/convert`;
 
-  const response = await axios.get(url, {
-    params: {
-      tz_from: "UTC",
-      tz_to: timeZone,
-      time,
-      apiKey: timeAPIKey,
-    },
-  });
-  timeData.value = response;
-  return response.data;
+    const response = await axios.get(url, {
+      params: {
+        tz_from: "UTC",
+        tz_to: timeZone,
+        time,
+        apiKey: timeAPIKey,
+      },
+    });
+    timeData.value = response;
+    return response.data;
+  } catch (e) {
+    isError.value = true;
+    console.log(e.message);
+    return e.message;
+  }
 }
 
 function transformSunTime(sunTime, obTime) {
@@ -133,10 +142,17 @@ let sunTime = ref();
 
 async function setData() {
   isLoading.value = true;
-  weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
-  sunTime.value = await returnSunTime(weatherData.value.timezone);
-  setVideoBackground(weatherData.value.weather.code);
-  isLoading.value = false;
+  try {
+    weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
+    sunTime.value = await returnSunTime(weatherData.value.timezone);
+    setVideoBackground(weatherData.value.weather.code);
+  } catch (e) {
+    isError.value = true;
+    console.log(e.message);
+    return e.message;
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 async function searchCity(searchedCity) {
@@ -148,17 +164,29 @@ async function searchCity(searchedCity) {
 
 async function firstSetup() {
   isLoading.value = true;
-  setGeolocationCoords();
-  weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
-  sunTime.value = await returnSunTime(weatherData.value.timezone);
-  setVideoBackground(weatherData.value.weather.code);
-  isLoading.value = false;
+  try {
+    setGeolocationCoords();
+    weatherData.value = await fetchWeatherData(paramCity.value, lat, lon);
+    sunTime.value = await returnSunTime(weatherData.value.timezone);
+    setVideoBackground(weatherData.value.weather.code);
+  } catch (e) {
+    isError = true;
+    return e.message;
+  } finally {
+    isLoading.value = false;
+  }
 }
 firstSetup();
 </script>
 
 <template>
-  <div class="weather-display" v-if="!isLoading">
+  <div class="error-display" v-if="isError">
+    <WeatherCard>
+      <p>Что-то пошло не так</p>
+    </WeatherCard>
+  </div>
+
+  <div class="weather-display" v-else-if="!isLoading">
     <video class="background-video" autoplay loop muted :src="videoSource"></video>
     <h1>Fantastic weather</h1>
     <div class="display-group">
@@ -185,6 +213,9 @@ firstSetup();
       :uv="weatherData.uv"
       :wind-gust="weatherData.gust"
     />
+  </div>
+  <div class="loading-display" v-else>
+    <Icon icon="ep:loading" width="192" height="192" style="color: #6e2fac" />
   </div>
 </template>
 
