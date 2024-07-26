@@ -1,41 +1,56 @@
 <script setup>
 import axios from "axios";
-import HumidityCard from "./components/HumidityCard.vue";
-import LocationCard from "./components/LocationCard.vue";
-import TodayHighlights from "./components/TodayHighlights.vue";
+import WindCard from "./components/WindCard.vue";
+import SunCard from "./components/SunCard.vue";
+import Forecast from "./components/Forecast.vue";
 import WeatherMain from "./components/WeatherMain.vue";
 import { useGeolocation } from "@vueuse/core";
-import { watch, onMounted, ref, computed } from "vue";
+import { watch, ref, computed, onMounted } from "vue";
 import { Icon } from "@iconify/vue";
 import { weatherIcons } from "./icons";
 import WeatherCard from "./components/UI/WeatherCard.vue";
+import SearchBar from "./components/SearchBar.vue";
+import LoadingElement from "./components/UI/LoadingElement.vue";
+import ErrorCard from "./components/UI/ErrorCard.vue";
 
 const apiKey = import.meta.env.VITE_API_KEY;
 const timeAPIKey = import.meta.env.VITE_API_KEY_TZ;
-
 const weatherCurrentData = ref({});
-
 const paramCity = ref(undefined);
-
 const isLoading = ref(false);
-
 const isError = ref(false);
+const { coords } = useGeolocation();
 
-const videoSource = ref("");
+onMounted(() => {
+  setGeolocationCoords();
+});
+
+console.log(coords);
 
 const lat = ref();
 const lon = ref();
 
 async function setGeolocationCoords() {
-  const { coords } = await useGeolocation();
   if (coords.value?.latitude !== Infinity) {
     paramCity.value = undefined;
-    return coords;
+    lat.value = coords.value.latitude;
+    lon.value = coords.value.longitude;
+    console.log(lat.value, lon.value);
   } else {
     paramCity.value = "Moscow";
+    lat.value = undefined;
+    lon.value = undefined;
   }
-  console.log(1);
 }
+
+watch(
+  () => coords.value.latitude,
+  () => {
+    setGeolocationCoords();
+    firstSetup();
+  },
+  { once: true }
+);
 
 const imageSource = ref("./src/assets/images/drizzle.jpg");
 
@@ -80,15 +95,6 @@ async function fetchWeatherCurrentData(city, lat, lon) {
   }
 }
 
-const todayDate = new Date()
-  .toISOString()
-  .split("T")
-  .slice(0, 1)
-  .toString()
-  .split("-")
-  .reverse()
-  .join(".");
-
 const timeData = ref({});
 
 async function fetchTimeData(time, timeZone) {
@@ -118,24 +124,26 @@ function transformSunTime(sunTime, obTime) {
 }
 
 async function returnSunTime(timeZone) {
-  console.log(4);
-  const sunriseTime = transformSunTime(
-    weatherCurrentData.value.sunrise,
-    weatherCurrentData.value.ob_time
-  );
-  let sunriseTimeConv = await fetchTimeData(sunriseTime, timeZone);
-  sunriseTimeConv = sunriseTimeConv.converted_time;
+  try {
+    console.log(4);
+    const sunriseTime = transformSunTime(
+      weatherCurrentData.value.sunrise,
+      weatherCurrentData.value.ob_time
+    );
+    let sunriseTimeConv = await fetchTimeData(sunriseTime, timeZone);
+    sunriseTimeConv = sunriseTimeConv.converted_time;
 
-  const sunsetTime = transformSunTime(
-    weatherCurrentData.value.sunset,
-    weatherCurrentData.value.ob_time
-  );
+    const sunsetTime = transformSunTime(
+      weatherCurrentData.value.sunset,
+      weatherCurrentData.value.ob_time
+    );
 
-  let sunsetTimeConv = await fetchTimeData(sunsetTime, timeZone);
+    let sunsetTimeConv = await fetchTimeData(sunsetTime, timeZone);
 
-  sunsetTimeConv = sunsetTimeConv.converted_time;
+    sunsetTimeConv = sunsetTimeConv.converted_time;
 
-  return { sunriseTimeConv, sunsetTimeConv };
+    return { sunriseTimeConv, sunsetTimeConv };
+  } catch (e) {}
 }
 
 let sunTime = ref();
@@ -158,7 +166,11 @@ async function setData() {
 
 async function searchCity(searchedCity) {
   paramCity.value = searchedCity;
-  weatherCurrentData.value = await fetchWeatherCurrentData(paramCity.value, lat, lon);
+  weatherCurrentData.value = await fetchWeatherCurrentData(
+    paramCity.value,
+    lat.value,
+    lon.value
+  );
   sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
   setData();
 }
@@ -167,10 +179,14 @@ async function firstSetup() {
   console.log(6);
   isLoading.value = true;
   try {
-    const coords = setGeolocationCoords();
-    lat.value = coords.latitude;
-    lon.value = coords.longitude;
-    weatherCurrentData.value = await fetchWeatherCurrentData(paramCity.value, lat, lon);
+    lat.value = coords.value.latitude;
+    lon.value = coords.value.longitude;
+    console.log(lat);
+    weatherCurrentData.value = await fetchWeatherCurrentData(
+      paramCity.value,
+      lat.value,
+      lon.value
+    );
     sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
     setBackground(weatherCurrentData.value.weather.code);
   } catch (e) {
@@ -180,20 +196,14 @@ async function firstSetup() {
     isLoading.value = false;
   }
 }
-
-function setAltImg(event) {
-  event.target.src = "./src/assets/images/altBackground.svg";
-}
-
-firstSetup();
 </script>
 
 <template>
-  <img :src="imageSource" class="background" />
+  <img src="./assets/images/altBackground.svg" class="background" />
 
-  <WeatherCard class="error-display" v-if="isError">
-    <p>Что-то пошло не так</p>
-  </WeatherCard>
+  <SearchBar @search-city="searchCity" class="search-block" />
+
+  <ErrorCard v-if="isError" />
 
   <div class="weather-display" v-else-if="!isLoading">
     <div class="display-group">
@@ -201,29 +211,29 @@ firstSetup();
         :city="weatherCurrentData.city_name"
         :temperature="weatherCurrentData.app_temp"
         :weather-description="weatherCurrentData.weather?.description"
-        :todayDate="todayDate"
         @search-city="searchCity"
         :weather-icon="weatherIcons[weatherCurrentData.weather?.icon]"
+        :app-temp="weatherCurrentData.app_temp"
+        :pressure="weatherCurrentData.pres"
+        :humidity="weatherCurrentData.rh"
       />
       <div class="details-display">
-        <LocationCard :lat="weatherCurrentData.lat" :long="weatherCurrentData.lon" />
-        <HumidityCard :humidity="weatherCurrentData.rh" />
+        <WindCard
+          :wind-speed="weatherCurrentData.wind_spd"
+          :wind-dir="weatherCurrentData.wind_cdir_full"
+          :wind-gust="weatherCurrentData.gust"
+        />
+        <SunCard
+          :sunrise="sunTime.sunriseTimeConv"
+          :sunset="sunTime.sunsetTimeConv"
+          :uv="weatherCurrentData.uv"
+        />
       </div>
     </div>
-    <TodayHighlights
-      :sunrise="sunTime.sunriseTimeConv"
-      :sunset="sunTime.sunsetTimeConv"
-      :app-temp="weatherCurrentData.app_temp"
-      :wind-speed="weatherCurrentData.wind_spd"
-      :wind-dir="weatherCurrentData.wind_cdir"
-      :pressure="weatherCurrentData.pres"
-      :uv="weatherCurrentData.uv"
-      :wind-gust="weatherCurrentData.gust"
-    />
+    <Forecast />
   </div>
-  <div class="loading-display" v-else>
-    <Icon icon="ep:loading" width="192" height="192" style="color: #2b4260" />
-  </div>
+
+  <LoadingElement v-else />
 </template>
 
 <style>
@@ -232,7 +242,6 @@ firstSetup();
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  color: white;
   font-family: Nunito, Arial;
   font-size: 1rem;
 }
@@ -243,11 +252,18 @@ button:hover {
 body {
   padding: 50px;
   background-color: #b69cff;
+  color: white;
+}
+
+.search-block {
+  margin-inline: auto;
+  margin-bottom: 30px;
 }
 
 .weather-display {
   display: flex;
   flex-direction: column;
+  flex: 2;
   gap: 30px;
 }
 
@@ -261,13 +277,8 @@ body {
 .details-display {
   display: flex;
   flex-direction: column;
-  width: 100%;
   gap: 30px;
-}
-
-.error-display {
-  justify-content: center;
-  align-self: center;
+  flex: 3;
 }
 
 h1 {
