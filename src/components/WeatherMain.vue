@@ -12,13 +12,16 @@ const props = defineProps({
   weatherDescription: {
     required: true,
   },
-  todayDate: {
-    required: true,
-  },
   weatherIcon: {
     required: true,
   },
   appTemp: {
+    type: Number,
+  },
+  pressure: {
+    type: Number,
+  },
+  humidity: {
     type: Number,
   },
 });
@@ -27,7 +30,7 @@ const props = defineProps({
 <template>
   <WeatherCard class="weather-main">
     <h2>Сегодня</h2>
-    <Icon class="weather-icon" :icon="weatherIcon" width="100px" style="color: white" />
+    <Icon class="weather-icon" :icon="weatherIcon" width="100" style="color: white" />
     <p class="temperature">{{ temperature }} &deg;C</p>
     <p class="app-temperature">Ощущается как {{ appTemp }} &deg;C</p>
 
@@ -42,22 +45,16 @@ const props = defineProps({
     </p>
     <hr class="line" />
     <p>
-      <Icon
-        icon="fluent:location-arrow-16-regular"
-        width="22"
-        height="22"
-        style="color: white"
-      />
+      <Icon icon="iconamoon:location-light" width="22" height="22" style="color: white" />
       {{ city }}
     </p>
     <p>
-      <Icon
-        icon="fluent:calendar-ltr-20-regular"
-        width="22"
-        height="22"
-        style="color: white"
-      />
-      {{ todayDate }}
+      <Icon icon="lets-icons:pressure" width="22" height="22" style="color: white" />
+      {{ Math.round(pressure * 0.75006156) }} мм рт. ст.
+    </p>
+    <p>
+      <Icon icon="uil:raindrops-alt" width="22" height="22" style="color: white" />
+      {{ humidity }} %
     </p>
   </WeatherCard>
 </template>
@@ -101,5 +98,6 @@ h2 {
 p {
   display: flex;
   gap: 5px;
+  align-items: center;
 }
 </style>

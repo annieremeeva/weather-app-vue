@@ -6,9 +6,7 @@ import Forecast from "./components/Forecast.vue";
 import WeatherMain from "./components/WeatherMain.vue";
 import { useGeolocation } from "@vueuse/core";
 import { watch, ref, computed, onMounted } from "vue";
-import { Icon } from "@iconify/vue";
-import { weatherIcons } from "./icons";
-import WeatherCard from "./components/UI/WeatherCard.vue";
+import { weatherIcons } from "./icons.js";
 import SearchBar from "./components/SearchBar.vue";
 import LoadingElement from "./components/UI/LoadingElement.vue";
 import ErrorCard from "./components/UI/ErrorCard.vue";
@@ -22,10 +20,9 @@ const isError = ref(false);
 const { coords } = useGeolocation();
 
 onMounted(() => {
+  isLoading.value = true;
   setGeolocationCoords();
 });
-
-console.log(coords);
 
 const lat = ref();
 const lon = ref();
@@ -35,7 +32,6 @@ async function setGeolocationCoords() {
     paramCity.value = undefined;
     lat.value = coords.value.latitude;
     lon.value = coords.value.longitude;
-    console.log(lat.value, lon.value);
   } else {
     paramCity.value = "Moscow";
     lat.value = undefined;
@@ -77,7 +73,6 @@ function setBackground(weatherCode) {
 }
 
 async function fetchWeatherCurrentData(city, lat, lon) {
-  console.log(2);
   try {
     const response = await axios.get("https://api.weatherbit.io/v2.0/current", {
       params: {
@@ -98,7 +93,6 @@ async function fetchWeatherCurrentData(city, lat, lon) {
 const timeData = ref({});
 
 async function fetchTimeData(time, timeZone) {
-  console.log(3);
   try {
     let url = `https://api.ipgeolocation.io/timezone/convert`;
 
@@ -125,7 +119,6 @@ function transformSunTime(sunTime, obTime) {
 
 async function returnSunTime(timeZone) {
   try {
-    console.log(4);
     const sunriseTime = transformSunTime(
       weatherCurrentData.value.sunrise,
       weatherCurrentData.value.ob_time
@@ -143,13 +136,14 @@ async function returnSunTime(timeZone) {
     sunsetTimeConv = sunsetTimeConv.converted_time;
 
     return { sunriseTimeConv, sunsetTimeConv };
-  } catch (e) {}
+  } catch (e) {
+    console.log(e.message);
+  }
 }
 
 let sunTime = ref();
 
 async function setData() {
-  console.log(5);
   isLoading.value = true;
   try {
     weatherCurrentData.value = await fetchWeatherCurrentData(paramCity.value, lat, lon);
@@ -176,12 +170,10 @@ async function searchCity(searchedCity) {
 }
 
 async function firstSetup() {
-  console.log(6);
   isLoading.value = true;
   try {
     lat.value = coords.value.latitude;
     lon.value = coords.value.longitude;
-    console.log(lat);
     weatherCurrentData.value = await fetchWeatherCurrentData(
       paramCity.value,
       lat.value,
