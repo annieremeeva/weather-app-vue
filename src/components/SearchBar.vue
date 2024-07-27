@@ -1,8 +1,8 @@
 <script setup>
 import { Icon } from "@iconify/vue";
-let searchedCity;
+const searchedCity = defineModel();
 
-const emit = defineEmits(["search-city"]);
+const emit = defineEmits(["search-city", "reset-geolocation"]);
 </script>
 
 <template>
@@ -11,8 +11,11 @@ const emit = defineEmits(["search-city"]);
       v-model="searchedCity"
       type="text"
       placeholder="Поиск"
-      @keyup.enter="$emit('search-city', searchedCity)"
+      @keyup.enter="$emit('search-city')"
     />
+    <button @click="$emit('reset-geolocation')">
+      <Icon icon="iconamoon:location-light" width="22" height="22" style="color: white" />
+    </button>
     <button @click="$emit('search-city', searchedCity)">
       <Icon icon="fluent:search-20-filled" width="22" height="22" style="color: white" />
     </button>

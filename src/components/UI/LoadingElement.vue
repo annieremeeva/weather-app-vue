@@ -4,7 +4,13 @@ import { Icon } from "@iconify/vue";
 
 <template>
   <div class="loading-display">
-    <Icon icon="ep:loading" width="192" height="192" style="color: #2b4260" />
+    <Icon
+      icon="ep:loading"
+      class="loader"
+      width="192"
+      height="192"
+      style="color: #2b4260"
+    />
   </div>
 </template>
 
@@ -13,5 +19,18 @@ import { Icon } from "@iconify/vue";
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.loader {
+  animation: spinner 3s linear infinite;
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

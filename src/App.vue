@@ -1,34 +1,45 @@
 <script setup>
-import axios from "axios";
 import WindCard from "./components/WindCard.vue";
 import SunCard from "./components/SunCard.vue";
 import Forecast from "./components/Forecast.vue";
 import WeatherMain from "./components/WeatherMain.vue";
 import { useGeolocation } from "@vueuse/core";
-import { watch, ref, computed, onMounted } from "vue";
+import { watch, ref, reactive } from "vue";
 import { weatherIcons } from "./icons.js";
 import SearchBar from "./components/SearchBar.vue";
 import LoadingElement from "./components/UI/LoadingElement.vue";
 import ErrorCard from "./components/UI/ErrorCard.vue";
+import {
+  addUIDToDays,
+  fetchTimeData,
+  fetchWeatherForecast,
+  fetchWeatherCurrentData,
+} from "./functions";
 
-const apiKey = import.meta.env.VITE_API_KEY;
-const timeAPIKey = import.meta.env.VITE_API_KEY_TZ;
-const weatherCurrentData = ref({});
+let weatherCurrentData = reactive({});
 const paramCity = ref(undefined);
 const isLoading = ref(false);
 const isError = ref(false);
-const { coords } = useGeolocation();
-
-onMounted(() => {
-  isLoading.value = true;
-  setGeolocationCoords();
-});
-
+const { coords, error } = useGeolocation();
 const lat = ref();
 const lon = ref();
 
+console.log(error);
+
+isLoading.value = true;
+setGeolocationCoords();
+firstSetup();
+
+if (error.message) {
+  paramCity.value = "Moscow";
+  lat.value = undefined;
+  lon.value = undefined;
+  console.log(error.message);
+  firstSetup();
+}
+
 async function setGeolocationCoords() {
-  if (coords.value?.latitude !== Infinity) {
+  if (coords.value.latitude !== Infinity) {
     paramCity.value = undefined;
     lat.value = coords.value.latitude;
     lon.value = coords.value.longitude;
@@ -48,70 +59,7 @@ watch(
   { once: true }
 );
 
-const imageSource = ref("./src/assets/images/drizzle.jpg");
-
-function setBackground(weatherCode) {
-  if ([300, 301, 302].includes(weatherCode)) {
-    imageSource.value = "./src/assets/images/drizzle.jpg";
-  } else if ([500, 501, 502, 511, 520, 521, 522].includes(weatherCode)) {
-    imageSource.value = "./src/assets/images/rain.jpg";
-  } else if ([600, 601, 602, 610, 611, 612, 621, 622, 623].includes(weatherCode)) {
-    imageSource.value = "./src/assets/images/snow.jpg";
-  } else if ([700, 711, 721, 731, 741, 751].includes(weatherCode)) {
-    imageSource.value = "./src/assets/images/fog.jpg";
-  } else if ([800, 801].includes(weatherCode)) {
-    imageSource.value = "./src/assets/images/sunny.jpg";
-  } else if ([802, 803].includes(weatherCode)) {
-    imageSource.value = "./src/assets/images/clouds.jpg";
-  } else if ([804].includes(weatherCode)) {
-    imageSource.value = "./src/assets/images/heavy-clouds.jpg";
-  } else if ([200, 201, 202, 230, 231, 232, 233].includes(weatherCode)) {
-    imageSource.value = "./src/assets/images/thunder.jpg";
-  } else {
-    imageSource.value = "./src/assets/images/clouds-undefined.jpg";
-  }
-}
-
-async function fetchWeatherCurrentData(city, lat, lon) {
-  try {
-    const response = await axios.get("https://api.weatherbit.io/v2.0/current", {
-      params: {
-        lang: "ru",
-        city,
-        key: apiKey,
-        lat,
-        lon,
-      },
-    });
-    return response.data.data[0];
-  } catch (e) {
-    isError.value = true;
-    return e.message;
-  }
-}
-
-const timeData = ref({});
-
-async function fetchTimeData(time, timeZone) {
-  try {
-    let url = `https://api.ipgeolocation.io/timezone/convert`;
-
-    const response = await axios.get(url, {
-      params: {
-        tz_from: "UTC",
-        tz_to: timeZone,
-        time,
-        apiKey: timeAPIKey,
-      },
-    });
-    timeData.value = response;
-    return response.data;
-  } catch (e) {
-    isError.value = true;
-    console.log(e.message);
-    return e.message;
-  }
-}
+let forecastDays = reactive([]);
 
 function transformSunTime(sunTime, obTime) {
   return obTime.split(" ").slice(0, 1).toString() + " " + sunTime;
@@ -120,15 +68,15 @@ function transformSunTime(sunTime, obTime) {
 async function returnSunTime(timeZone) {
   try {
     const sunriseTime = transformSunTime(
-      weatherCurrentData.value.sunrise,
-      weatherCurrentData.value.ob_time
+      weatherCurrentData.sunrise,
+      weatherCurrentData.ob_time
     );
     let sunriseTimeConv = await fetchTimeData(sunriseTime, timeZone);
     sunriseTimeConv = sunriseTimeConv.converted_time;
 
     const sunsetTime = transformSunTime(
-      weatherCurrentData.value.sunset,
-      weatherCurrentData.value.ob_time
+      weatherCurrentData.sunset,
+      weatherCurrentData.ob_time
     );
 
     let sunsetTimeConv = await fetchTimeData(sunsetTime, timeZone);
@@ -141,14 +89,19 @@ async function returnSunTime(timeZone) {
   }
 }
 
-let sunTime = ref();
+let sunTime = reactive({});
 
 async function setData() {
   isLoading.value = true;
   try {
-    weatherCurrentData.value = await fetchWeatherCurrentData(paramCity.value, lat, lon);
-    sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
-    setBackground(weatherCurrentData.value.weather.code);
+    weatherCurrentData = await fetchWeatherCurrentData(
+      paramCity.value,
+      lat.value,
+      lon.value
+    );
+    sunTime = await returnSunTime(weatherCurrentData.timezone);
+    forecastDays = await fetchWeatherForecast(paramCity.value, lat.value, lon.value);
+    forecastDays = addUIDToDays(forecastDays);
   } catch (e) {
     isError.value = true;
     console.log(e.message);
@@ -158,29 +111,35 @@ async function setData() {
   }
 }
 
-async function searchCity(searchedCity) {
-  paramCity.value = searchedCity;
-  weatherCurrentData.value = await fetchWeatherCurrentData(
+const searchedCityParent = ref();
+
+async function searchCity() {
+  paramCity.value = searchedCityParent.value;
+  lat.value = undefined;
+  lon.value = undefined;
+  weatherCurrentData = await fetchWeatherCurrentData(
     paramCity.value,
     lat.value,
     lon.value
   );
-  sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
+  console.log(lat.value);
+  sunTime = await returnSunTime(weatherCurrentData.timezone);
   setData();
+  searchedCityParent.value = "";
 }
 
 async function firstSetup() {
   isLoading.value = true;
   try {
-    lat.value = coords.value.latitude;
-    lon.value = coords.value.longitude;
-    weatherCurrentData.value = await fetchWeatherCurrentData(
+    console.log(lat.value, lon.value, paramCity.value);
+    weatherCurrentData = await fetchWeatherCurrentData(
       paramCity.value,
       lat.value,
       lon.value
     );
-    sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
-    setBackground(weatherCurrentData.value.weather.code);
+    sunTime = await returnSunTime(weatherCurrentData.timezone);
+    forecastDays = await fetchWeatherForecast(paramCity.value, lat.value, lon.value);
+    forecastDays = addUIDToDays(forecastDays);
   } catch (e) {
     isError.value = true;
     return e.message;
@@ -188,12 +147,26 @@ async function firstSetup() {
     isLoading.value = false;
   }
 }
+
+async function resetGeolocation() {
+  if (coords.value.latitude !== Infinity) {
+    paramCity.value = undefined;
+    lat.value = coords.value.latitude;
+    lon.value = coords.value.longitude;
+  }
+  setData();
+}
 </script>
 
 <template>
   <img src="./assets/images/altBackground.svg" class="background" />
 
-  <SearchBar @search-city="searchCity" class="search-block" />
+  <SearchBar
+    v-model="searchedCityParent"
+    @search-city="searchCity"
+    @reset-geolocation="resetGeolocation"
+    class="search-block"
+  />
 
   <ErrorCard v-if="isError" />
 
@@ -256,20 +229,20 @@ body {
   display: flex;
   flex-direction: column;
   flex: 2;
-  gap: 30px;
+  gap: 20px;
 }
 
 .display-group {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 30px;
+  gap: 20px;
 }
 
 .details-display {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 20px;
   flex: 3;
 }
 
