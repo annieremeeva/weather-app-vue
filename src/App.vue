@@ -195,7 +195,7 @@ async function resetGeolocation() {
         />
       </div>
     </div>
-    <Forecast />
+    <Forecast :forecast-days="forecastDays" />
   </div>
 
   <LoadingElement v-else />

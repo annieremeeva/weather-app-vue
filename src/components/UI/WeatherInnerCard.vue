@@ -13,5 +13,6 @@ div {
   background: #4d6170;
   border-radius: 5px;
   padding: 10px;
+  flex: 1;
 }
 </style>
