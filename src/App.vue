@@ -122,7 +122,6 @@ async function searchCity() {
     lat.value,
     lon.value
   );
-  console.log(lat.value);
   sunTime = await returnSunTime(weatherCurrentData.timezone);
   setData();
   searchedCityParent.value = "";
@@ -215,7 +214,7 @@ button:hover {
   cursor: pointer;
 }
 body {
-  padding: 50px;
+  padding: 20px;
   background-color: #b69cff;
   color: white;
 }
@@ -273,6 +272,9 @@ h2 {
 }
 
 @media (orientation: landscape) {
+  body {
+    padding: 50px;
+  }
   .display-group {
     flex-direction: row;
     width: 100%;
