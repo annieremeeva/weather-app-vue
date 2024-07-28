@@ -153,6 +153,7 @@ async function firstSetup() {
 }
 
 async function resetGeolocation() {
+  const { coords } = useGeolocation();
   if (coords.value.latitude !== Infinity) {
     paramCity.value = undefined;
     lat.value = coords.value.latitude;
