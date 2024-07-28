@@ -2,7 +2,7 @@
 import { Icon } from "@iconify/vue";
 const searchedCity = defineModel();
 
-const emit = defineEmits(["search-city", "reset-geolocation"]);
+const emit = defineEmits(["search-city", "get-geolocation"]);
 </script>
 
 <template>
@@ -14,19 +14,19 @@ const emit = defineEmits(["search-city", "reset-geolocation"]);
       @keyup.enter="$emit('search-city')"
     />
     <div class="search-buttons-block">
-      <button @click="$emit('reset-geolocation')">
+      <button aria-label="Определить геолокацию" @click="$emit('get-geolocation')">
         <Icon
           icon="iconamoon:location-light"
-          width="22"
-          height="22"
+          width="30"
+          height="30"
           style="color: white"
         />
       </button>
-      <button @click="$emit('search-city', searchedCity)">
+      <button aria-label="Найти место" @click="$emit('search-city', searchedCity)">
         <Icon
           icon="fluent:search-20-filled"
-          width="22"
-          height="22"
+          width="30"
+          height="30"
           style="color: white"
         />
       </button>

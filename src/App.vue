@@ -20,7 +20,6 @@ const weatherCurrentData = ref();
 const paramCity = ref(undefined);
 const isLoading = ref(false);
 const isError = ref(false);
-const { coords, error } = useGeolocation();
 const lat = ref();
 const lon = ref();
 
@@ -28,35 +27,11 @@ isLoading.value = true;
 setGeolocationCoords();
 firstSetup();
 
-if (error.message) {
+async function setGeolocationCoords() {
   paramCity.value = "Moscow";
   lat.value = undefined;
   lon.value = undefined;
-  firstSetup();
 }
-
-async function setGeolocationCoords() {
-  if (coords.value.latitude !== Infinity) {
-    paramCity.value = undefined;
-    lat.value = coords.value.latitude;
-    lon.value = coords.value.longitude;
-  } else {
-    paramCity.value = "Moscow";
-    lat.value = undefined;
-    lon.value = undefined;
-  }
-}
-
-let count = 0;
-
-watch(
-  () => coords.value.latitude,
-  () => {
-    setGeolocationCoords();
-    setData();
-    count++;
-  }
-);
 
 const forecastDays = ref();
 
@@ -127,6 +102,8 @@ async function searchCity() {
   sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
   setData();
   searchedCityParent.value = "";
+  navigator.geolocation.clearWatch(watchID);
+  watchID = "";
 }
 
 async function firstSetup() {
@@ -152,24 +129,39 @@ async function firstSetup() {
   }
 }
 
-async function resetGeolocation() {
-  const { coords } = useGeolocation();
-  if (coords.value.latitude !== Infinity) {
+let watchID;
+
+async function getGeolocation() {
+  function success(position) {
+    lat.value = position.coords.latitude;
+    lon.value = position.coords.longitude;
     paramCity.value = undefined;
-    lat.value = coords.value.latitude;
-    lon.value = coords.value.longitude;
+    setData();
   }
-  setData();
+
+  function error() {
+    alert("Геолокация недоступна");
+    lat.value = undefined;
+    lon.value = undefined;
+    paramCity.value = "Moscow";
+  }
+
+  if (!navigator.geolocation) {
+    alert("Геолокация не поддерживается вашим браузером");
+  } else {
+    watchID = navigator.geolocation.watchPosition(success, error);
+    setData();
+  }
 }
 </script>
 
 <template>
-  <img src="./assets/images/altBackground.svg" class="background" />
+  <img src="./assets/images/altBackground.svg" class="background" alt="" />
 
   <SearchBar
     v-model="searchedCityParent"
     @search-city="searchCity"
-    @reset-geolocation="resetGeolocation"
+    @get-geolocation="getGeolocation"
     class="search-block"
   />
 
