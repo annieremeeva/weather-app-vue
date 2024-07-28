@@ -16,15 +16,13 @@ import {
   fetchWeatherCurrentData,
 } from "./functions";
 
-let weatherCurrentData = reactive({});
+const weatherCurrentData = ref();
 const paramCity = ref(undefined);
 const isLoading = ref(false);
 const isError = ref(false);
 const { coords, error } = useGeolocation();
 const lat = ref();
 const lon = ref();
-
-console.log(error);
 
 isLoading.value = true;
 setGeolocationCoords();
@@ -34,7 +32,6 @@ if (error.message) {
   paramCity.value = "Moscow";
   lat.value = undefined;
   lon.value = undefined;
-  console.log(error.message);
   firstSetup();
 }
 
@@ -50,16 +47,18 @@ async function setGeolocationCoords() {
   }
 }
 
+let count = 0;
+
 watch(
   () => coords.value.latitude,
   () => {
     setGeolocationCoords();
-    firstSetup();
-  },
-  { once: true }
+    setData();
+    count++;
+  }
 );
 
-let forecastDays = reactive([]);
+const forecastDays = ref();
 
 function transformSunTime(sunTime, obTime) {
   return obTime.split(" ").slice(0, 1).toString() + " " + sunTime;
@@ -68,15 +67,15 @@ function transformSunTime(sunTime, obTime) {
 async function returnSunTime(timeZone) {
   try {
     const sunriseTime = transformSunTime(
-      weatherCurrentData.sunrise,
-      weatherCurrentData.ob_time
+      weatherCurrentData.value.sunrise,
+      weatherCurrentData.value.ob_time
     );
     let sunriseTimeConv = await fetchTimeData(sunriseTime, timeZone);
     sunriseTimeConv = sunriseTimeConv.converted_time;
 
     const sunsetTime = transformSunTime(
-      weatherCurrentData.sunset,
-      weatherCurrentData.ob_time
+      weatherCurrentData.value.sunset,
+      weatherCurrentData.value.ob_time
     );
 
     let sunsetTimeConv = await fetchTimeData(sunsetTime, timeZone);
@@ -85,26 +84,29 @@ async function returnSunTime(timeZone) {
 
     return { sunriseTimeConv, sunsetTimeConv };
   } catch (e) {
-    console.log(e.message);
+    isError.value = true;
+    return e.message;
   }
 }
 
-let sunTime = reactive({});
+const sunTime = ref();
 
 async function setData() {
-  isLoading.value = true;
   try {
-    weatherCurrentData = await fetchWeatherCurrentData(
+    weatherCurrentData.value = await fetchWeatherCurrentData(
       paramCity.value,
       lat.value,
       lon.value
     );
-    sunTime = await returnSunTime(weatherCurrentData.timezone);
-    forecastDays = await fetchWeatherForecast(paramCity.value, lat.value, lon.value);
-    forecastDays = addUIDToDays(forecastDays);
+    sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
+    forecastDays.value = await fetchWeatherForecast(
+      paramCity.value,
+      lat.value,
+      lon.value
+    );
+    forecastDays.value = addUIDToDays(forecastDays.value);
   } catch (e) {
     isError.value = true;
-    console.log(e.message);
     return e.message;
   } finally {
     isLoading.value = false;
@@ -117,12 +119,12 @@ async function searchCity() {
   paramCity.value = searchedCityParent.value;
   lat.value = undefined;
   lon.value = undefined;
-  weatherCurrentData = await fetchWeatherCurrentData(
+  weatherCurrentData.value = await fetchWeatherCurrentData(
     paramCity.value,
     lat.value,
     lon.value
   );
-  sunTime = await returnSunTime(weatherCurrentData.timezone);
+  sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
   setData();
   searchedCityParent.value = "";
 }
@@ -130,15 +132,18 @@ async function searchCity() {
 async function firstSetup() {
   isLoading.value = true;
   try {
-    console.log(lat.value, lon.value, paramCity.value);
-    weatherCurrentData = await fetchWeatherCurrentData(
+    weatherCurrentData.value = await fetchWeatherCurrentData(
       paramCity.value,
       lat.value,
       lon.value
     );
-    sunTime = await returnSunTime(weatherCurrentData.timezone);
-    forecastDays = await fetchWeatherForecast(paramCity.value, lat.value, lon.value);
-    forecastDays = addUIDToDays(forecastDays);
+    sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
+    forecastDays.value = await fetchWeatherForecast(
+      paramCity.value,
+      lat.value,
+      lon.value
+    );
+    forecastDays.value = addUIDToDays(forecastDays.value);
   } catch (e) {
     isError.value = true;
     return e.message;
@@ -175,7 +180,6 @@ async function resetGeolocation() {
         :city="weatherCurrentData.city_name"
         :temperature="weatherCurrentData.app_temp"
         :weather-description="weatherCurrentData.weather?.description"
-        @search-city="searchCity"
         :weather-icon="weatherIcons[weatherCurrentData.weather?.icon]"
         :app-temp="weatherCurrentData.app_temp"
         :pressure="weatherCurrentData.pres"

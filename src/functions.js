@@ -70,10 +70,10 @@ async function fetchWeatherForecast(city, lat, lon) {
         days: 7,
       },
     });
-    console.log(response.data);
     return response.data.data;
   } catch (e) {
-    console.log(e.message);
+    isError.value = true
+    return e.message
   }
 }
 

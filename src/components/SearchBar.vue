@@ -13,12 +13,24 @@ const emit = defineEmits(["search-city", "reset-geolocation"]);
       placeholder="Поиск"
       @keyup.enter="$emit('search-city')"
     />
-    <button @click="$emit('reset-geolocation')">
-      <Icon icon="iconamoon:location-light" width="22" height="22" style="color: white" />
-    </button>
-    <button @click="$emit('search-city', searchedCity)">
-      <Icon icon="fluent:search-20-filled" width="22" height="22" style="color: white" />
-    </button>
+    <div class="search-buttons-block">
+      <button @click="$emit('reset-geolocation')">
+        <Icon
+          icon="iconamoon:location-light"
+          width="22"
+          height="22"
+          style="color: white"
+        />
+      </button>
+      <button @click="$emit('search-city', searchedCity)">
+        <Icon
+          icon="fluent:search-20-filled"
+          width="22"
+          height="22"
+          style="color: white"
+        />
+      </button>
+    </div>
   </div>
 </template>
 
@@ -32,6 +44,12 @@ const emit = defineEmits(["search-city", "reset-geolocation"]);
   padding: 10px;
   border-radius: 10px;
   background-color: #4d6170;
+}
+
+.search-buttons-block {
+  padding-top: 5px;
+  display: flex;
+  gap: 20px;
 }
 
 .search-bar:focus-within {
