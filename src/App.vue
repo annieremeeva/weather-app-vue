@@ -25,7 +25,9 @@ const lon = ref();
 
 isLoading.value = true;
 setGeolocationCoords();
-const message = firstSetup();
+firstSetup();
+
+let message = ref();
 
 async function setGeolocationCoords() {
   paramCity.value = "Moscow";
@@ -121,7 +123,8 @@ async function firstSetup() {
     forecastDays.value = addUIDToDays(forecastDays.value);
   } catch (e) {
     isError.value = true;
-    return await e.message;
+    message.value = e.message;
+    return e.message;
   } finally {
     isLoading.value = false;
   }
