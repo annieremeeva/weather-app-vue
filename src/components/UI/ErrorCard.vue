@@ -1,16 +1,10 @@
 <script setup>
 import WeatherCard from "./WeatherCard.vue";
-
-const props = defineProps({
-  message: {
-    type: Object,
-  },
-});
 </script>
 
 <template>
   <WeatherCard class="error-display">
-    <p>Что-то пошло не так {{ message }}</p>
+    <p>Что-то пошло не так</p>
   </WeatherCard>
 </template>
 

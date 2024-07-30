@@ -23,11 +23,13 @@ const isError = ref(false);
 const lat = ref();
 const lon = ref();
 
+const firstSetupMessage = ref();
+const setDataMessage = ref();
+const setGeolocationMessage = ref();
+
 isLoading.value = true;
 setGeolocationCoords();
 firstSetup();
-
-let message = ref();
 
 async function setGeolocationCoords() {
   paramCity.value = "Moscow";
@@ -84,6 +86,7 @@ async function setData() {
     forecastDays.value = addUIDToDays(forecastDays.value);
   } catch (e) {
     isError.value = true;
+    setDataMessage.value = e.message;
     return e.message;
   } finally {
     isLoading.value = false;
@@ -123,7 +126,7 @@ async function firstSetup() {
     forecastDays.value = addUIDToDays(forecastDays.value);
   } catch (e) {
     isError.value = true;
-    message.value = e.message;
+    firstSetupMessage.value = e.message;
     return e.message;
   } finally {
     isLoading.value = false;
@@ -164,7 +167,9 @@ async function getGeolocation() {
     class="search-block"
   />
 
-  <ErrorCard v-if="isError" :message="message" />
+  <p>{{}}</p>
+
+  <ErrorCard v-if="isError" />
 
   <div class="weather-display" v-else-if="!isLoading">
     <div class="display-group">
