@@ -121,7 +121,7 @@ async function firstSetup() {
     forecastDays.value = addUIDToDays(forecastDays.value);
   } catch (e) {
     isError.value = true;
-    return e.message;
+    return await e.message;
   } finally {
     isLoading.value = false;
   }
@@ -161,7 +161,7 @@ async function getGeolocation() {
     class="search-block"
   />
 
-  <ErrorCard v-if="isError" :message="message" />
+  <ErrorCard v-if="isError" :message="message.value" />
 
   <div class="weather-display" v-else-if="!isLoading">
     <div class="display-group">
