@@ -25,7 +25,7 @@ const lon = ref();
 
 isLoading.value = true;
 setGeolocationCoords();
-firstSetup();
+const message = firstSetup();
 
 async function setGeolocationCoords() {
   paramCity.value = "Moscow";
@@ -127,8 +127,6 @@ async function firstSetup() {
   }
 }
 
-let watchID;
-
 async function getGeolocation() {
   function success(position) {
     lat.value = position.coords.latitude;
@@ -163,7 +161,7 @@ async function getGeolocation() {
     class="search-block"
   />
 
-  <ErrorCard v-if="isError" />
+  <ErrorCard v-if="isError" :message="message" />
 
   <div class="weather-display" v-else-if="!isLoading">
     <div class="display-group">
