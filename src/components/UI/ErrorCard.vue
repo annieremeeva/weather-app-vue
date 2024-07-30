@@ -2,9 +2,7 @@
 import WeatherCard from "./WeatherCard.vue";
 
 const props = defineProps({
-  message: {
-    type: String,
-  },
+  message,
 });
 </script>
 
