@@ -86,7 +86,6 @@ async function setData() {
     forecastDays.value = addUIDToDays(forecastDays.value);
   } catch (e) {
     isError.value = true;
-    setDataMessage.value = e.message;
     return e.message;
   } finally {
     isLoading.value = false;
@@ -126,7 +125,6 @@ async function firstSetup() {
     forecastDays.value = addUIDToDays(forecastDays.value);
   } catch (e) {
     isError.value = true;
-    firstSetupMessage.value = e.message;
     return e.message;
   } finally {
     isLoading.value = false;
@@ -166,8 +164,6 @@ async function getGeolocation() {
     @get-geolocation="getGeolocation"
     class="search-block"
   />
-
-  <p>{{ (firstSetupMessage, setDataMessage) }}</p>
 
   <ErrorCard v-if="isError" />
 
@@ -209,10 +205,6 @@ async function getGeolocation() {
   box-sizing: border-box;
   font-family: Nunito, Arial;
   font-size: 1rem;
-}
-
-p {
-  background-color: black;
 }
 
 button:hover {
