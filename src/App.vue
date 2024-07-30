@@ -161,7 +161,7 @@ async function getGeolocation() {
     class="search-block"
   />
 
-  <ErrorCard v-if="isError" :message="message.value" />
+  <ErrorCard v-if="isError" :message="message" />
 
   <div class="weather-display" v-else-if="!isLoading">
     <div class="display-group">
