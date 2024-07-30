@@ -102,8 +102,6 @@ async function searchCity() {
   sunTime.value = await returnSunTime(weatherCurrentData.value.timezone);
   setData();
   searchedCityParent.value = "";
-  navigator.geolocation.clearWatch(watchID);
-  watchID = "";
 }
 
 async function firstSetup() {
@@ -149,7 +147,7 @@ async function getGeolocation() {
   if (!navigator.geolocation) {
     alert("Геолокация не поддерживается вашим браузером");
   } else {
-    watchID = navigator.geolocation.watchPosition(success, error);
+    navigator.geolocation.getCurrentPosition(success, error);
     setData();
   }
 }
