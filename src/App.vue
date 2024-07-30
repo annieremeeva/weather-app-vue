@@ -167,7 +167,7 @@ async function getGeolocation() {
     class="search-block"
   />
 
-  <p>{{}}</p>
+  <p>{{ (firstSetupMessage, setDataMessage) }}</p>
 
   <ErrorCard v-if="isError" />
 
@@ -209,6 +209,10 @@ async function getGeolocation() {
   box-sizing: border-box;
   font-family: Nunito, Arial;
   font-size: 1rem;
+}
+
+p {
+  background-color: black;
 }
 
 button:hover {
